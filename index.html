@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>백윤성T 소수정예 심화 Class</title>
+    
+    <!-- [안전장치: 화면 오류 시 메시지 표시] -->
+    <style>
+        #error-display { display: none; padding: 20px; background: #fee; border: 1px solid #f99; color: #d00; font-family: sans-serif; margin: 20px; border-radius: 8px; }
+    </style>
+    
+    <!-- [라이브러리 로드] -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Nanum+Myeongjo:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .serif-font { font-family: 'Nanum Myeongjo', serif; }
+        @media print {
+            .no-print { display: none !important; }
+            body { -webkit-print-color-adjust: exact; }
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* 마감임박(빨강) 펄스 */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+        /* 소수정예(보라) 펄스 */
+        @keyframes pulse-purple {
+            0% { box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(147, 51, 234, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(147, 51, 234, 0); }
+        }
+        .urgent-pulse { animation: pulse-red 2s infinite; }
+        .premium-pulse { animation: pulse-purple 2s infinite; }
+    </style>
+</head>
+<body>
+    <!-- 에러 메시지 박스 -->
+    <div id="error-display"></div>
+
+    <!-- 리액트 렌더링 영역 -->
+    <div id="root">
+        <div style="text-align:center; padding-top: 100px; color:#666;">
+            <div class="loader"></div>
+            <h3>페이지 로딩 중...</h3>
+            <p style="font-size:14px; margin-top:10px;">잠시만 기다려주세요.</p>
+        </div>
+    </div>
+
+    <!-- 스크립트 실행 -->
+    <script>
+        // 전역 에러 핸들러
+        window.onerror = function(msg, url, line, col, error) {
+            var errorBox = document.getElementById('error-display');
+            var root = document.getElementById('root');
+            root.style.display = 'none'; 
+            errorBox.style.display = 'block';
+            errorBox.innerHTML += '<strong>⚠️ 오류가 발생했습니다:</strong><br>' + msg + '<br><small>' + (url || 'unknown script') + ' (Line: ' + line + ')</small><br><br>';
+            return false;
+        };
+    </script>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        // Icons
+        const Calendar = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
+        const BookOpen = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>;
+        const Clock = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
+        const CheckCircle = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+        const Phone = ({ size = 18, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>;
+        const MapPin = ({ size = 18, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>;
+        const Star = ({ size = 20, className = "", fill = "none" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>;
+        const Info = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
+        const Upload = ({ size = 24, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>;
+        const Download = ({ size = 24, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;
+        const Crown = ({ size = 16, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z"></path></svg>;
+        const GraduationCap = ({ size = 24, className = "", color = "currentColor" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>;
+
+        const App = () => {
+            const [theme, setTheme] = useState('dark');
+            // GitHub에 올린 파일 이름과 정확히 일치해야 합니다.
+            const [logo, setLogo] = useState('./logo.png');
+            const [profile, setProfile] = useState('./profile.png');
+            const [isSaving, setIsSaving] = useState(false);
+            const logoInputRef = useRef(null);
+            const profileInputRef = useRef(null);
+
+            const toggleTheme = () => { setTheme(prev => prev === 'dark' ? 'light' : 'dark'); };
+
+            const handleImageUpload = (e, setFunction) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => { setFunction(reader.result); };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            // 이미지를 못 찾으면 확장자를 jpg, jpeg, PNG, JPG 순서로 바꿔서 찾아보는 똑똑한 기능
+            const handleImgError = (type) => {
+                if(type === 'logo') {
+                    if (logo === './logo.png') setLogo('./logo.jpg');
+                    else if (logo === './logo.jpg') setLogo('./logo.jpeg');
+                    else if (logo === './logo.jpeg') setLogo('./logo.PNG');
+                    else if (logo === './logo.PNG') setLogo('./logo.JPG');
+                    else setLogo(null);
+                }
+                if(type === 'profile') {
+                    if (profile === './profile.png') setProfile('./profile.jpg');
+                    else if (profile === './profile.jpg') setProfile('./profile.jpeg');
+                    else if (profile === './profile.jpeg') setProfile('./profile.PNG');
+                    else if (profile === './profile.PNG') setProfile('./profile.JPG');
+                    else setProfile(null);
+                }
+            };
+
+            const handleSaveImage = async () => {
+                const element = document.getElementById('capture-area');
+                if (!element) return;
+                setIsSaving(true);
+                setTimeout(async () => {
+                    try {
+                        const canvas = await html2canvas(element, { scale: 2, backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff', useCORS: true });
+                        const link = document.createElement('a');
+                        link.download = `백윤성T_시간표_${new Date().toISOString().slice(0,10)}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    } catch (err) { alert("이미지 저장 실패: " + err.message); } finally { setIsSaving(false); }
+                }, 100);
+            };
+
+            const colors = {
+                dark: {
+                    bg: "bg-slate-900", container: "bg-slate-800", text: "text-white", subText: "text-slate-400",
+                    accent: "text-amber-400", accentBg: "bg-amber-400", accentBorder: "border-amber-400",
+                    cardBg: "bg-slate-800/50", cardBorder: "border-slate-700", sectionTitle: "text-white",
+                    headerBg: "bg-gradient-to-b from-slate-900 to-slate-800", boxBg: "bg-slate-700/50",
+                    dashed: "border-slate-600 hover:border-amber-400", premiumText: "text-amber-300",
+                },
+                light: {
+                    bg: "bg-white", container: "bg-white", text: "text-slate-900", subText: "text-slate-600",
+                    accent: "text-blue-900", accentBg: "bg-blue-900", accentBorder: "border-blue-900",
+                    cardBg: "bg-white", cardBorder: "border-slate-200", sectionTitle: "text-blue-900",
+                    headerBg: "bg-white", boxBg: "bg-blue-50", dashed: "border-slate-300 hover:border-blue-500",
+                    premiumText: "text-indigo-700",
+                }
+            };
+            const current = colors[theme];
+
+            // -------------------------------------------------------------
+            // [시간표 내용 수정 영역]
+            // -------------------------------------------------------------
+            const offlineClasses = [
+                {
+                    title: "대수 문풀 심화(평일반)",
+                    time: "월/수/금 20:00 - 22:00",
+                    start: "", 
+                    book: "자이스토리 고2 대수 + 주간지",
+                    target: "기본 개념을 넘어 1등급을 향한 고난도 문제 해결",
+                    badge: "소수정예 특별관리", 
+                    highlight: true
+                },
+                {
+                    title: "대수 문풀 심화(주말반)",
+                    time: "토/일 14:00 - 17:00",
+                    start: "",
+                    book: "자이스토리 고2 대수 + 주간지",
+                    target: "기본 개념을 넘어 1등급을 향한 고난도 문제 해결",
+                    badge: "소수정예 특별관리",
+                    highlight: true
+                },
+                {
+                    title: "미적분1 문풀 심화",
+                    time: "토/일 18:00 - 21:00",
+                    start: "",
+                    book: "자이스토리 미적분1 + 주간지", // 수정됨
+                    target: "기본 개념을 넘어 1등급을 향한 고난도 문제 해결",
+                    badge: "소수정예 특별관리",
+                    highlight: true
+                },
+                {
+                    title: "예비 수험생 수리논술 특강",
+                    time: "목요일 19:00 - 22:00",
+                    start: "",
+                    book: "자체 유인물 및 주간지 제공",
+                    target: "수리논술을 미리 준비하여 고지를 선점할 예비 고3",
+                    badge: "Special Class",
+                    highlight: false
+                }
+            ];
+            // -------------------------------------------------------------
+
+            const managementFeatures = [
+                {
+                    title: "4명 정원 소수정예 그룹수업",
+                    time: "프리미엄 관리", start: "밀착 지도", book: "과외식 수업",
+                    desc: "대형 강의와 과외의 장점만을 결합한 1:4 밀착 관리 시스템으로 빈틈없는 지도",
+                    highlight: true,
+                    badge: "Premium"
+                },
+                {
+                    title: "밀착 클리닉 & 피드백", time: "오답 관리", start: "질의 응답", book: "약점 보완",
+                    desc: "수업 전후 1:1 질의응답 및 오답 노트 점검", highlight: false, badge: "Care"
+                },
+                {
+                    title: "실전 모의고사", time: "실전 감각", start: "시간 관리", book: "등급 향상",
+                    desc: "정기적인 실전 모의고사로 실전 감각 극대화", highlight: false, badge: "Test"
+                }
+            ];
+
+            return (
+                <div className={`min-h-screen ${current.bg} transition-colors duration-500`}>
+                    <div className="fixed top-4 right-4 z-50 flex gap-2 no-print flex-col md:flex-row items-end">
+                        <button onClick={toggleTheme} className={`px-4 py-2 rounded-full font-bold shadow-lg transition-all mb-2 md:mb-0 md:mr-2 ${theme === 'dark' ? 'bg-white text-slate-900 hover:bg-gray-200' : 'bg-slate-900 text-white hover:bg-slate-700'}`}>
+                            {theme === 'dark' ? '☀️ 인쇄 모드' : '🌙 다크 모드'}
+                        </button>
+                        <div className="flex flex-wrap justify-end gap-2">
+                            <button onClick={handleSaveImage} disabled={isSaving} className="px-4 py-2 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-500 transition-all flex items-center gap-2">
+                                <Download size={18} /> 이미지로 저장 (캡처)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="max-w-4xl mx-auto p-4 md:p-8" id="capture-area">
+                        <header className={`text-center py-10 mb-8 rounded-2xl ${theme === 'dark' ? 'border border-slate-700' : 'border border-slate-100 shadow-sm'} ${current.headerBg}`}>
+                            <div className="flex justify-center items-center mb-6">
+                                <input type="file" ref={logoInputRef} onChange={(e) => handleImageUpload(e, setLogo)} className="hidden" accept="image/*" />
+                                <div onClick={() => logoInputRef.current.click()} className={`relative cursor-pointer group flex items-center justify-center rounded-xl transition-all ${!logo ? `p-2 border-2 border-dashed ${current.dashed} h-28 w-64` : 'bg-white p-3 shadow-md'}`}>
+                                    {logo ? (
+                                        <div className="relative">
+                                            <img src={logo} alt="로고" onError={() => handleImgError('logo')} className="h-20 md:h-24 object-contain" />
+                                            <div className="absolute inset-0 bg-black/0 hover:bg-black/20 flex items-center justify-center transition-colors rounded"></div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                                            <Upload size={24} className={current.text} />
+                                            <span className={`text-sm ${current.text} font-bold`}>로고 업로드 (클릭)</span>
+                                            <span className={`text-xs ${current.subText}`}>또는 logo.png</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            <div className="inline-block px-4 py-1 rounded-full border border-amber-400/50 text-amber-500 text-xs font-bold tracking-widest mb-3 uppercase">2026 Winter Immersion</div>
+                            <h1 className={`text-3xl md:text-5xl font-black mb-4 leading-tight ${theme === 'dark' ? 'text-white' : 'text-blue-900'}`}>
+                                2026년 <span className={theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}>국희재수학 봉선점</span><br/>겨울방학 시간표
+                            </h1>
+                            <p className={`text-lg md:text-xl font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                                <span className="font-bold border-b-2 border-current pb-1 inline-block mb-1">백윤성T 소수정예 심화 Class</span>
+                            </p>
+                            <div className={`w-16 h-1 mx-auto mt-6 rounded-full ${theme === 'dark' ? 'bg-amber-400' : 'bg-blue-900'}`}></div>
+                        </header>
+
+                        <div className={`mb-10 p-6 rounded-2xl flex flex-col md:flex-row items-center gap-6 ${theme === 'dark' ? 'bg-slate-800/80 border border-amber-400/30' : 'bg-white border border-slate-200 shadow-sm'}`}>
+                            <input type="file" ref={profileInputRef} onChange={(e) => handleImageUpload(e, setProfile)} className="hidden" accept="image/*" />
+                            <div onClick={() => profileInputRef.current.click()} className="relative shrink-0 group cursor-pointer">
+                                <div className={`w-32 h-40 md:w-36 md:h-48 rounded-2xl overflow-hidden border-4 ${theme === 'dark' ? 'border-amber-400' : 'border-blue-900'} shadow-xl bg-gray-200 print-hide-border flex items-center justify-center`}>
+                                    {profile ? (
+                                        <img src={profile} alt="백윤성 T" onError={() => handleImgError('profile')} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-1 opacity-50 group-hover:opacity-100">
+                                            <Upload size={20} className="text-slate-500" />
+                                            <span className="text-xs text-slate-600 font-bold">프로필 업로드</span>
+                                            <span className="text-[10px] text-slate-500">또는 profile.png</span>
+                                        </div>
+                                    )}
+                                </div>
+                                {profile && <div className="absolute inset-0 rounded-2xl bg-black/0 hover:bg-black/20 flex items-center justify-center transition-colors"></div>}
+                                <div className={`absolute bottom-0 right-0 px-3 py-1 text-xs font-bold rounded-full shadow-lg ${theme === 'dark' ? 'bg-amber-400 text-slate-900' : 'bg-blue-900 text-white'}`}>전임 강사</div>
+                            </div>
+                            <div className="text-center md:text-left flex-1">
+                                <h3 className={`text-2xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                    백윤성 <span className={`text-lg font-medium ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`}>T</span>
+                                </h3>
+
+                                <div className={`my-5 py-3 pl-4 border-l-4 text-left ${theme === 'dark' ? 'border-amber-400 bg-slate-700/30' : 'border-blue-600 bg-blue-50/50'} rounded-r-lg`}>
+                                    <p className={`font-bold text-lg leading-snug break-keep ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                                        "소수정예 특별관리 : <span className={theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}>각 반 정원 4명 마감</span>"
+                                    </p>
+                                </div>
+
+                                <div className={`space-y-1 mb-4 text-sm md:text-base ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                    <p className="flex items-center justify-center md:justify-start gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
+                                        연세대학교 의과대학
+                                    </p>
+                                    <p className="flex items-center justify-center md:justify-start gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
+                                        연세대학교 의과대학 수리논술 2회 합격
+                                    </p>
+                                    <p className="flex items-center justify-center md:justify-start gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
+                                        現 (주)국희재수학 수리논술 팀장
+                                    </p>
+                                </div>
+                                <div className={`inline-block px-4 py-2 rounded-lg text-sm font-medium ${theme === 'dark' ? 'bg-slate-700 text-amber-200' : 'bg-slate-100 text-blue-800'}`}>
+                                    ✨ 빈틈없는 관리 & 확실한 성적 향상
+                                </div>
+                            </div>
+                        </div>
+
+                        <section className="mb-10">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-amber-400 text-slate-900' : 'bg-blue-900 text-white'}`}>
+                                    <BookOpen size={24} />
+                                </div>
+                                <h2 className={`text-2xl md:text-3xl font-bold ${current.sectionTitle}`}>
+                                    OFFLINE CLASS <span className="text-sm font-normal opacity-70 ml-2">현장 강의</span>
+                                </h2>
+                            </div>
+                            
+                            <div className="grid md:grid-cols-2 gap-4">
+                                {offlineClasses.map((item, idx) => (
+                                    <div key={idx} className={`p-6 rounded-xl relative overflow-hidden group ${current.cardBg} ${item.highlight ? 'border-4 border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.2)]' : (theme === 'dark' ? 'border-slate-700 hover:border-amber-400/50' : 'border-slate-100 shadow-md hover:border-blue-200')} transition-all`}>
+                                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                                            <GraduationCap size={60} color={theme === 'dark' ? 'white' : 'black'} />
+                                        </div>
+                                        <h3 className={`text-2xl font-black mb-4 flex flex-wrap items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                                            {item.title}
+                                            {item.badge === "🔥 마감임박" ? (
+                                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-600 text-white font-bold urgent-pulse shadow-lg whitespace-nowrap align-middle">{item.badge}</span>
+                                            ) : (
+                                                item.badge === "소수정예 특별관리" ? (
+                                                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-purple-600 text-white font-bold premium-pulse shadow-lg whitespace-nowrap align-middle">{item.badge}</span>
+                                                ) : (
+                                                    item.badge && <span className="text-xs px-2 py-0.5 rounded bg-red-600 text-white">{item.badge}</span>
+                                                )
+                                            )}
+                                        </h3>
+                                        <div className="space-y-4">
+                                            <div className="flex items-start gap-3">
+                                                <Clock size={24} className={`mt-1 shrink-0 ${current.accent}`} />
+                                                <span className={`font-bold text-xl leading-snug break-keep ${theme === 'dark' ? 'text-amber-300' : 'text-blue-700'}`}>{item.time}</span>
+                                            </div>
+                                            
+                                            {item.start && (
+                                                <div className="flex items-start gap-3">
+                                                    <Calendar size={20} className={`mt-1 shrink-0 ${current.subText}`} />
+                                                    <span className={`text-lg leading-snug ${current.text}`}>{item.start}</span>
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-start gap-3">
+                                                <BookOpen size={20} className={`mt-1 shrink-0 ${current.subText}`} />
+                                                <span className={`text-lg font-bold leading-snug break-keep ${current.text}`}>{item.book}</span>
+                                            </div>
+                                            <div className="mt-3 pt-3 border-t border-dashed border-gray-500/30 text-base opacity-90 flex items-start gap-2">
+                                                <CheckCircle size={16} className="mt-1 shrink-0" />
+                                                <span className={`leading-snug break-keep ${current.text}`}>{item.target}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        <div className="flex items-center gap-4 my-10 opacity-30">
+                            <div className={`h-px flex-1 ${theme === 'dark' ? 'bg-white' : 'bg-slate-900'}`}></div>
+                            <div className="text-xl">❖</div>
+                            <div className={`h-px flex-1 ${theme === 'dark' ? 'bg-white' : 'bg-slate-900'}`}></div>
+                        </div>
+
+                        <section className="mb-12">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-amber-400 text-slate-900' : 'bg-blue-600 text-white'}`}>
+                                    <Star size={24} fill={theme === 'dark' ? 'black' : 'white'} />
+                                </div>
+                                <div>
+                                    <h2 className={`text-2xl md:text-3xl font-bold ${current.sectionTitle}`}>
+                                        SPECIAL CARE SYSTEM <span className="text-sm font-normal opacity-70 ml-2">관리 시스템</span>
+                                    </h2>
+                                </div>
+                            </div>
+
+                            <div className={`mb-6 p-4 rounded-xl border ${theme === 'dark' ? 'border-amber-400/30 bg-amber-400/10' : 'border-blue-200 bg-blue-50'}`}>
+                                <div className="flex gap-3">
+                                    <Info size={24} className={theme === 'dark' ? 'text-amber-400 shrink-0' : 'text-blue-600 shrink-0'} />
+                                    <div>
+                                        <h4 className={`font-bold mb-1 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-800'}`}>
+                                            백윤성T 만의 독보적인 관리 시스템
+                                        </h4>
+                                        <p className={`text-sm leading-relaxed ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                            <span className="font-semibold">4명 정원 소수정예 그룹수업</span>을 통해 학생 개개인의 학습 성향과 취약점을 정밀하게 파악하고, 
+                                            <span className="font-semibold"> 1:1 맞춤형 피드백</span>으로 
+                                            성적 향상을 위한 최적의 학습 로드맵을 제시합니다.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {managementFeatures.map((item, idx) => (
+                                    <div key={idx} className={`relative p-5 rounded-xl border ${current.cardBg} ${item.highlight && theme === 'dark' ? 'border-amber-400/60 shadow-[0_0_15px_rgba(251,191,36,0.2)]' : (item.highlight && theme === 'light' ? 'border-blue-500 shadow-md ring-1 ring-blue-100' : (theme === 'dark' ? 'border-slate-700' : 'border-slate-100 shadow-sm'))} transition-all`}>
+                                        
+                                        {item.badge && (
+                                            <div className="absolute -top-3 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md animate-pulse flex items-center gap-1">
+                                                {item.badge.includes("System") || item.badge.includes("Care") ? <Crown size={12} /> : null}
+                                                {item.badge}
+                                            </div>
+                                        )}
+
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                                                        {item.title}
+                                                    </h3>
+                                                    {item.highlight && <Star size={16} className="text-yellow-500 fill-yellow-500"/>}
+                                                </div>
+                                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                                                    <span className={`font-semibold ${current.premiumText}`}>{item.time}</span>
+                                                    <span className="opacity-50">|</span>
+                                                    <span className={current.text}>{item.start}</span>
+                                                    <span className="opacity-50">|</span>
+                                                    <span className={current.subText}>{item.book}</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg ${theme === 'dark' ? 'bg-slate-900/50 text-amber-200' : 'bg-blue-50 text-blue-800'}`}>
+                                                <CheckCircle size={16} />
+                                                {item.desc}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        <footer className={`mt-12 py-8 px-6 text-center rounded-2xl ${theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-slate-100'}`}>
+                            <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-10 mb-4">
+                                <div className="flex items-center gap-2">
+                                    <Phone size={18} className={current.accent} />
+                                    <span className={`font-bold ${current.text}`}>상담문의 : 010-6662-6542</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <MapPin size={18} className={current.accent} />
+                                    <span className={current.text}>광주 남구 봉선2로 49 3층 국희재수학전문학원 봉선점</span>
+                                </div>
+                            </div>
+                            <p className={`text-sm ${current.subText}`}>
+                                "결과로 증명하는 심화 수학의 기준, 국희재수학전문학원"
+                            </p>
+                        </footer>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
